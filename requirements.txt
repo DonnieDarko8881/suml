@@ -1,5 +1,5 @@
 streamlit
 Pillow
-autogluon-vision==0.6.3b20230201
 pandas
 requests
+opencv-python

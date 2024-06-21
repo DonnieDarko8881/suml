@@ -1,9 +1,13 @@
 import streamlit as st
 from PIL import Image
 import io
-from autogluon.vision import ImagePredictor
 import pandas as pd
-import requests
+import cv2
+import tensorflow as tf
+import numpy as np
+import sys
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 
 def load_image(image_bytes):
@@ -16,13 +20,6 @@ def evaluate_image(image):
     # model.predict(image)
     return  # result
 
-
-url = 'https://upcdn.io/FW25c67/raw/image_predictor'
-response = requests.get(url)
-# predictor = ImagePredictor.load('D:\\suml\\image_predictor')
-with open('image_predictor', 'wb') as f:
-    f.write(response.content)
-predictor = ImagePredictor.load('image_predictor')
 
 st.set_page_config(page_title="Face recognition app")
 
@@ -40,22 +37,33 @@ write_text_in_center(
 )
 write_text_in_center("Please import your file below.", "h3")
 
+model = tf.keras.models.load_model("face_recognition.keras")
+
+class_names = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
+
 photo = st.file_uploader("Upload photo", type=["jpg", "jpeg", "png"])
 if photo:
+    image = Image.open(photo)
+    # st.write(image.size)
+    image_np = np.array(image)
+    input_image = (
+        image_np.reshape((1, 48, 48, 1)).astype("float32") / 255.0
+    )  # Reshape and normalize
+    # st.write(image_np.shape)
+    # gray_image = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+    # st.write(input_image.shape)
+    result = model.predict(input_image)
+    pred_labels = np.argmax(result, axis=1)
+
+    st.write(class_names[int(pred_labels[0])])
+    # st.write(result)
+
+    # image_np = image_np / 255
+    # image = cv2.cvtColor(image_np, cv2.IMREAD_GRAYSCALE)
+    # image = cv2.resize(image, (50, 50))
+    # result = model.predict(image)
+    # st.write(result)
     bytes = photo.getvalue()
-    image = load_image(photo.read())
-
-    with open("temp_image.jpg", "wb") as f:
-        f.write(photo.getbuffer())
-
-    test_df = pd.DataFrame(["temp_image.jpg"], columns=['image'])
-
-    predictions = predictor.predict(test_df)
-    for  pred in zip( predictions):
-        st.write(pred)
-    resized_image = image.resize((250, 250))
-    st.image(resized_image)
-    st.write("")
 
 evaluate_photo = st.button("Evaluate!", use_container_width=True)
 
