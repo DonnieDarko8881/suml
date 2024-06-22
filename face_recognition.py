@@ -42,6 +42,8 @@ model = tf.keras.models.load_model("face_recognition.keras")
 class_names = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
 photo = st.file_uploader("Upload photo", type=["jpg", "jpeg", "png"])
+write_text_in_center("Or", "h3")
+photo = st.camera_input("Take a picture")
 if photo:
     image = Image.open(photo)
     # st.write(image.size)
