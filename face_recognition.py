@@ -6,22 +6,22 @@ import cv2
 import tensorflow as tf
 import numpy as np
 import sys
+from time import sleep
 
 sys.stdout.reconfigure(encoding="utf-8")
-
-
-def load_image(image_bytes):
-    img = Image.open(io.BytesIO(image_bytes))
-    return img
-
-
-def evaluate_image(image):
-    # model = joblib.load(model)
-    # model.predict(image)
-    return  # result
-
-
 st.set_page_config(page_title="Face recognition app")
+class_names = ["angry", "disgusted", "scared", "happy", "neutral", "sad", "surprised"]
+model = tf.keras.models.load_model("face_recognition.keras")
+
+
+def evaluate_photo(photo):
+    image = Image.open(photo)
+    image_np = np.array(image)
+    input_image = image_np.reshape((1, 48, 48, 1)).astype("float32") / 255.0
+    result = model.predict(input_image)
+    pred_labels = np.argmax(result, axis=1)
+
+    return class_names[int(pred_labels[0])]
 
 
 def write_text_in_center(text, header):
@@ -37,38 +37,20 @@ write_text_in_center(
 )
 write_text_in_center("Please import your file below.", "h3")
 
-model = tf.keras.models.load_model("face_recognition.keras")
 
-class_names = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
+photo_uploader = st.file_uploader("Upload photo", type=["jpg", "jpeg", "png"])
+write_text_in_center("Or", "h5")
+camera_button = st.button("Take a selfie!", use_container_width=True)
 
-photo = st.file_uploader("Upload photo", type=["jpg", "jpeg", "png"])
-write_text_in_center("Or", "h3")
-photo = st.camera_input("Take a picture")
-if photo:
-    image = Image.open(photo)
-    # st.write(image.size)
-    image_np = np.array(image)
-    input_image = (
-        image_np.reshape((1, 48, 48, 1)).astype("float32") / 255.0
-    )  # Reshape and normalize
-    # st.write(image_np.shape)
-    # gray_image = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
-    # st.write(input_image.shape)
-    result = model.predict(input_image)
-    pred_labels = np.argmax(result, axis=1)
+if camera_button:
+    camera_photo = st.camera_input("Take a picture")
+    st.write(camera_photo is None)
+    if camera_photo is not None:
+        write_text_in_center(evaluate_photo(camera_photo), "h4")
+        # sleep(5)
 
-    st.write(class_names[int(pred_labels[0])])
-    # st.write(result)
-
-    # image_np = image_np / 255
-    # image = cv2.cvtColor(image_np, cv2.IMREAD_GRAYSCALE)
-    # image = cv2.resize(image, (50, 50))
-    # result = model.predict(image)
-    # st.write(result)
-    bytes = photo.getvalue()
+if photo_uploader is not None:
+    st.image(photo_uploader, use_column_width="always")
+    write_text_in_center(evaluate_photo(photo_uploader), "h4")
 
 evaluate_photo = st.button("Evaluate!", use_container_width=True)
-
-if evaluate_photo:
-    result = evaluate_image(image)
-    st.success(result)
